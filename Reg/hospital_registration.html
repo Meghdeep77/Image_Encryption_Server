@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Registration</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .navbar {
+            margin-bottom: 20px;
+        }
+        #responseMessage {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        #responseMessage.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        #responseMessage.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Image Upload App</a>
+</nav>
+
+<div class="container">
+    <h1>Hospital Registration</h1>
+    <form id="registrationForm" action="/register_hospital" method="post">
+        <div class="form-group">
+            <label for="name">Hospital Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" class="form-control" id="address" name="address" required>
+        </div>
+        <div class="form-group">
+            <label for="contact_email">Contact Email</label>
+            <input type="email" class="form-control" id="contact_email" name="contact_email" required>
+        </div>
+        <div class="form-group">
+            <label for="contact_phone">Contact Phone</label>
+            <input type="tel" class="form-control" id="contact_phone" name="contact_phone">
+        </div>
+
+        <!-- Password field added -->
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+
+    <!-- Response message section -->
+    <div id="responseMessage"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    document.getElementById('registrationForm').addEventListener('submit', function(event) {
+        event.preventDefault();  // Prevent the default form submission
+
+        // Fetch form data
+        const formData = new FormData(this);
+
+        // Submit form using Fetch API
+        fetch('/register_hospital', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Show success message
+                displayResponseMessage('Successfully registered! Redirecting to login...', 'success');
+
+                // Trigger the file download
+                window.location.href = '/download';
+
+                // Redirect to /login after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000); // Wait 3 seconds before redirecting to the login page
+            } else {
+                // Show error message
+                displayResponseMessage('Registration failed. Please try again.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            displayResponseMessage('An error occurred. Please try again.', 'error');
+        });
+    });
+
+    function displayResponseMessage(message, type) {
+        const responseMessageDiv = document.getElementById('responseMessage');
+        responseMessageDiv.textContent = message;
+        responseMessageDiv.className = '';  // Clear previous classes
+        responseMessageDiv.classList.add(type);  // Add success or error class
+        responseMessageDiv.style.display = 'block';  // Show the message
+    }
+</script>
+
+</body>
+</html>

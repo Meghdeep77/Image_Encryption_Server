@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Encryption Platform Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            margin: 30px auto;
+            padding: 20px;
+            max-width: 800px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .option-card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Image Encryption Platform</a>
+</nav>
+
+<div class="container">
+    <h1>Dashboard</h1>
+
+    <!-- Option 1: Send Image -->
+    <div class="option-card">
+        <h2>Send Image</h2>
+        <p>Upload an image to send it securely to another hospital. The image will be encrypted using AES and the key will be exchanged using RSA encryption.</p>
+        <a href="/send_image?message=Sending Image" class="btn btn-primary">Send Image</a>
+    </div>
+
+    <!-- Option 2: Receive Image -->
+    <div class="option-card">
+        <h2>Receive Image</h2>
+        <p>Receive an encrypted image from another hospital. Once received, you will be able to decrypt it using the provided key.</p>
+        <a href="/receive_image?message=Receiving Image" class="btn btn-secondary">Receive Image</a>
+    </div>
+
+    <!-- Option 3: Decrypt Image -->
+    <div class="option-card">
+        <h2>Decrypt Image</h2>
+        <p>Upload an encrypted image and provide the decryption key to recover the original image.</p>
+        <a href="/decrypt_image?message=Decrypting Image" class="btn btn-success">Decrypt Image</a>
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>
