@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding as aes_padding
 from cryptography.hazmat.primitives.asymmetric import padding as rsa_padding
-
+import json
 
 cred = credentials.Certificate("cred.json")
 firebase_admin.initialize_app(cred, {
@@ -93,6 +93,11 @@ def get_hospitals():
 
 def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
     # Step 1: Read the image from the given path
+    with open('current_hospital.json', 'r') as json_file:
+        # Load the JSON data into a Python object (typically a dictionary)
+        data = json.load(json_file)
+    sender = data['hospital_name']
+
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} does not exist.")
 
@@ -133,8 +138,8 @@ def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
     )
 
     # Step 9: Save the encrypted image and AES key to files
-    encrypted_image_path = f"{hospital}/encrypted_image.bin"
-    encrypted_key_path = f"{hospital}/encrypted_aes_key.bin"
+    encrypted_image_path = f"{hospital}/encrypted_image_{sender}.bin"
+    encrypted_key_path = f"{hospital}/encrypted_aes_key_{sender}.bin"
 
     with open(encrypted_image_path, "wb") as image_file:
         image_file.write(iv + encrypted_image)  # Save IV + encrypted image
@@ -147,7 +152,6 @@ def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
 
 
     return encrypted_image_path, encrypted_key_path
-
 
 
 

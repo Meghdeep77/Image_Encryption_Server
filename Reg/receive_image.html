@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retrieve Encrypted Image and AES Key</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .navbar {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Hospital Image Platform</a>
+</nav>
+
+<div class="container">
+    <h1>Retrieve Encrypted Image and AES Key</h1>
+    <form id="retrieveForm" onsubmit="event.preventDefault(); downloadEncryptedFiles();">
+        <div class="form-group">
+            <label for="hospitalName">Hospital Name</label>
+            <input type="text" class="form-control" id="hospitalName" name="hospitalName" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Retrieve Files</button>
+    </form>
+</div>
+
+<script>
+    async function downloadEncryptedFiles() {
+        const hospitalName = document.getElementById("hospitalName").value;
+
+        // Define filenames
+        const imageFilename = `${hospitalName}_encrypted_image.enc`;
+        const aesKeyFilename = `${hospitalName}_encrypted_AES_key.key`;
+
+        // Fetch and download encrypted image
+        try {
+            await downloadFile(`/get_encrypted_image/${hospitalName}`, imageFilename);
+            await downloadFile(`/get_AES_key/${hospitalName}`, aesKeyFilename);
+            alert("Both files have been downloaded successfully.");
+        } catch (error) {
+            alert("Error downloading files: " + error.message);
+        }
+    }
+
+    async function downloadFile(url, filename) {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to retrieve file: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

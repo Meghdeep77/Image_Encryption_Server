@@ -1,8 +1,9 @@
-from fastapi import FastAPI, UploadFile, File,Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse,RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import os
+import json
 import shutil
 
 import utils
@@ -13,7 +14,7 @@ app.mount("/uploads", StaticFiles(directory="./uploads"), name="uploads")
 # Directory for storing registered hospitals (for demo purposes)
 HOSPITALS_DIR = Path("hospitals")
 HOSPITALS_DIR.mkdir(parents=True, exist_ok=True)
-
+current_hosp = ""
 @app.get("/", response_class=HTMLResponse)
 async def home():
     try:
@@ -47,6 +48,37 @@ async def get_registration_form():
 def download_file():
     file_path = "private_key.pem"  # specify the file's path
     return FileResponse(file_path, filename="private_key.pem")
+@app.get("/get_encrypted_image/{hospital_name}")
+async def get_encrypted_image(hospital_name: str):
+    # Construct the file path
+    with open('current_hospital.json', 'r') as json_file:
+        # Load the JSON data into a Python object (typically a dictionary)
+        data = json.load(json_file)
+    reciever = data['hospital_name']
+    file_path = os.path.join( reciever,f"encrypted_image_{hospital_name}.bin")
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Return the file as a response
+    return FileResponse(file_path)
+
+@app.get("/get_AES_key/{hospital_name}")
+async def get_encrypted_image(hospital_name: str):
+    # Construct the file path
+    with open('current_hospital.json', 'r') as json_file:
+        # Load the JSON data into a Python object (typically a dictionary)
+        data = json.load(json_file)
+    reciever = data['hospital_name']
+    file_path = os.path.join( reciever,f"encrypted_aes_key_{hospital_name}.bin")
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Return the file as a response
+    return FileResponse(file_path)
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def get_registration_form():
@@ -62,6 +94,16 @@ async def get_registration_form():
     # Serve the HTML file for hospital registration
     try:
         with open("Reg/send_image.html", "r") as file:
+            html_content = file.read()
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
+
+@app.get("/receive_image", response_class=HTMLResponse)
+async def get_registration_form():
+    # Serve the HTML file for hospital registration
+    try:
+        with open("Reg/receive_image.html", "r") as file:
             html_content = file.read()
         return HTMLResponse(content=html_content)
     except Exception as e:
@@ -113,6 +155,12 @@ async def login_hospital(
     try:
         login_status,status = utils.login_hospital(name, password)
         if status:
+            send = {"hospital_name":name}
+            with open('current_hospital.json', 'w') as file:
+                json.dump(send, file)
+                # Write data to the file
+
+
             with open("Reg/redirect.html", "r") as file:
                 html_content = file.read()
             return HTMLResponse(content=html_content)
@@ -140,14 +188,10 @@ async def upload_image(
         # Encrypt the image immediately after saving it
         encrypted_image_path, encrypted_key_path = utils.encrypt_image_with_aes_and_rsa(file_location, hospital)
 
-        return JSONResponse(content={
-            "message": "Image uploaded and encrypted successfully",
-            "file_path": file_location,
-            "encrypted_image": encrypted_image_path,
-            "encrypted_key": encrypted_key_path
-        })
+        with open("Reg/image_uploaded.html", "r") as file:
+            html_content = file.read()
+        return HTMLResponse(content=html_content)
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-
 
