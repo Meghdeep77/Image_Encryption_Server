@@ -10,6 +10,7 @@ import utils
 
 app = FastAPI()
 app.mount("/Reg", StaticFiles(directory="./Reg"), name="Reg")
+app.mount("/Decryption", StaticFiles(directory="./Decryption"), name="Decryption")
 app.mount("/uploads", StaticFiles(directory="./uploads"), name="uploads")
 # Directory for storing registered hospitals (for demo purposes)
 HOSPITALS_DIR = Path("hospitals")
@@ -80,6 +81,22 @@ async def get_encrypted_image(hospital_name: str):
     # Return the file as a response
     return FileResponse(file_path)
 
+@app.get("/get_decrypted_image")
+async def get_encrypted_image():
+    # Construct the file path
+    with open('current_hospital.json', 'r') as json_file:
+        # Load the JSON data into a Python object (typically a dictionary)
+        data = json.load(json_file)
+    reciever = data['hospital_name']
+    file_path = os.path.join('Decryption',f'{reciever}_Decrypted_image.jpg')
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Return the file as a response
+    return FileResponse(file_path, media_type='image/jpeg', filename=f'{reciever}_Decrypted_image.jpg')
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def get_registration_form():
     # Serve the HTML file for hospital registration
@@ -109,6 +126,25 @@ async def get_registration_form():
     except Exception as e:
         return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
 
+@app.get("/OTP", response_class=HTMLResponse)
+async def get_registration_form():
+    # Serve the HTML file for hospital registration
+    try:
+        with open("Reg/OTP.html", "r") as file:
+            html_content = file.read()
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
+
+@app.get("/Decryption")
+async def decryption_page():
+    # This can be the decryption page or any content you'd like to serve after OTP verification
+    try:
+        with open("Reg/decryption.html", "r") as file:
+            html_content = file.read()
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        return HTMLResponse(content=f"Error: {str(e)}", status_code=500)
 @app.get("/registered_hospitals")
 async def get_hospitals():
     try:
@@ -194,4 +230,68 @@ async def upload_image(
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@app.post("/send_OTP")
+async def sendOTP():
+    try:
+        utils.send_otp_via_email()
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@app.post("/validate_otp")
+async def verify_otp(otp: str = Form(...)):
+
+    # Fetch hospital data from Firebase
+    print(otp)
+    print(utils.get_otp())
+    try:
+        if(int(utils.get_otp()) == int(otp)):
+            print("OTP verified")
+            return {"LOGIN": "Successful"}
+        else:
+            print("OTP verification failed")
+            return {"LOGIN": "Failed"}
+
+
+
+    except Exception as e:
+        return {"error": f"An error occurred: {str(e)}"}
+
+decryption_dir = "Decryption"
+os.makedirs(decryption_dir, exist_ok=True)
+
+
+@app.post("/decrypt_image")
+async def decrypt_image_file(
+        encrypted_image: UploadFile = File(...),
+        encrypted_key: UploadFile = File(...),
+        private_key: UploadFile = File(...),
+):
+    try:
+        # Save uploaded files to the Decryption directory
+        encrypted_image_path = os.path.join(decryption_dir, encrypted_image.filename)
+        encrypted_key_path = os.path.join(decryption_dir, encrypted_key.filename)
+        private_key_path = os.path.join(decryption_dir, private_key.filename)
+
+        # Save each uploaded file
+        with open(encrypted_image_path, 'wb') as image_file:
+            image_file.write(await encrypted_image.read())
+
+        with open(encrypted_key_path, 'wb') as key_file:
+            key_file.write(await encrypted_key.read())
+
+        with open(private_key_path, 'wb') as key_file:
+            key_file.write(await private_key.read())
+
+        output_path = f'Decryption/{utils.get_current_hospital()}_Decrypted_image.jpg'
+
+        utils.decrypt_image_file(encrypted_image_path, encrypted_key_path, private_key_path,output_path)
+
+        # Return a success message
+        return {"Status": "Success", "decryptedImageUrl" : output_path}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decryption Page</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-weight: bold;
+            color: #343a40;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Hospital Image Platform</a>
+</nav>
+
+<div class="container">
+    <h1 class="text-center mb-4">Upload Encrypted Files for Decryption</h1>
+    <form id="decryptionForm" enctype="multipart/form-data" onsubmit="event.preventDefault(); decryptFiles();">
+        <div class="form-group">
+            <label for="encryptedImage">Upload Encrypted Image</label>
+            <input type="file" class="form-control-file" id="encryptedImage" name="encrypted_image" accept="image/*" required>
+        </div>
+        <div class="form-group">
+            <label for="encryptedKey">Upload Encrypted Key</label>
+            <input type="file" class="form-control-file" id="encryptedKey" name="encrypted_key" accept=".key" required>
+        </div>
+        <div class="form-group">
+            <label for="privateKey">Upload Private Key</label>
+            <input type="file" class="form-control-file" id="privateKey" name="private_key" accept=".key" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Submit for Decryption</button>
+    </form>
+
+    <div id="result" class="mt-4"></div>
+</div>
+
+<script>
+    async function decryptFiles() {
+    const imageFile = document.getElementById("encryptedImage").files[0];
+    const keyFile = document.getElementById("encryptedKey").files[0];
+    const privateKeyFile = document.getElementById("privateKey").files[0];
+
+    if (!imageFile || !keyFile || !privateKeyFile) {
+        alert("Please upload all required files.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("encrypted_image", imageFile);
+    formData.append("encrypted_key", keyFile);
+    formData.append("private_key", privateKeyFile);
+
+    try {
+        const response = await fetch("/decrypt_image", {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            const decryptedImageUrl = result.decryptedImageUrl; // Keep this for displaying the image
+            const downloadUrl = "/get_decrypted_image" // Get the filename from the URL for downloading
+
+            // Display the decrypted image
+            document.getElementById("result").innerHTML = `
+                <div class="alert alert-success">Decryption successful!</div>
+                <p><strong>Decrypted Image:</strong></p>
+                <img src="${decryptedImageUrl}" alt="Decrypted Image" class="img-fluid">
+                <a href="${downloadUrl}" class="btn btn-primary mt-2">Download Decrypted Image</a>
+            `;
+        } else {
+            document.getElementById("result").innerHTML = `
+                <div class="alert alert-danger">Decryption failed. Please check your files and try again.</div>
+            `;
+            console.error("Server error:", response.status);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        document.getElementById("result").innerHTML = `
+            <div class="alert alert-danger">An error occurred while processing your request.</div>
+        `;
+    }
+}
+
+</script>
+
+</body>
+</html>

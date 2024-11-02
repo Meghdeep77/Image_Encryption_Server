@@ -11,6 +11,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding as aes_padding
 from cryptography.hazmat.primitives.asymmetric import padding as rsa_padding
 import json
+import smtplib
+import random
+
 
 cred = credentials.Certificate("cred.json")
 firebase_admin.initialize_app(cred, {
@@ -153,6 +156,92 @@ def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
 
     return encrypted_image_path, encrypted_key_path
 
+
+
+
+def send_otp_via_email():
+    # Generate a 6-digit OTP
+    otp = random.randint(100000, 999999)
+
+    # Define email server and login credentials
+    sender_email = "imageencryptionplaform@gmail.com"
+    password = "xugm yskb yakz xarx"
+    subject = "Your OTP Code"
+    message = f"Your OTP code is {otp}"
+    curr_hosp = get_current_hospital()
+    hospital_ref = db.reference(f'/{curr_hosp}')
+    hosp_data= hospital_ref.get()
+    receiver_email = hosp_data['contact_email']
+
+    # Add the OTP field
+    hospital_ref.update({"OTP": otp})
+    # Connect to Gmail's SMTP server
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()  # Upgrade to secure connection
+        server.login(sender_email, password)
+
+        # Send the email
+        email_message = f"Subject: {subject}\n\n{message}"
+        server.sendmail(sender_email, receiver_email, email_message)
+        print(f"OTP sent to {receiver_email}: {otp}")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+    finally:
+        server.quit()
+
+def get_current_hospital():
+    with open('current_hospital.json', 'r') as json_file:
+        # Load the JSON data into a Python object (typically a dictionary)
+        data = json.load(json_file)
+    current = data['hospital_name']
+    return current
+def get_otp():
+    curr_hosp = get_current_hospital()
+    hospital_ref = db.reference(f'/{curr_hosp}')
+    hosp_data = hospital_ref.get()
+    otp = hosp_data['OTP']
+    return otp
+def decrypt_image_file(encrypted_image_path: str, encrypted_key_path: str, private_key_path: str, output_image_path: str):
+    # Step 1: Load the RSA private key
+    with open(private_key_path, 'rb') as key_file:
+        private_key = serialization.load_pem_private_key(key_file.read(), password=None, backend=default_backend())
+
+    # Step 2: Read the encrypted AES key
+    with open(encrypted_key_path, 'rb') as key_file:
+        encrypted_aes_key = key_file.read()
+
+    # Step 3: Decrypt the AES key using RSA private key
+    aes_key = private_key.decrypt(
+        encrypted_aes_key,
+        rsa_padding.OAEP(
+            mgf=rsa_padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+
+    # Step 4: Read the encrypted image data
+    with open(encrypted_image_path, 'rb') as image_file:
+        iv = image_file.read(16)  # Read the IV (the first 16 bytes)
+        encrypted_data = image_file.read()  # Read the rest of the file
+
+    # Step 5: Decrypt the image data using AES
+    cipher = Cipher(algorithms.AES(aes_key), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+
+    # Step 6: Unpad the decrypted data
+    unpadder = aes_padding.PKCS7(algorithms.AES.block_size).unpadder()
+    image_data = unpadder.update(padded_data) + unpadder.finalize()
+
+    # Step 7: Save the decrypted image data to a file
+    with open(output_image_path, 'wb') as output_file:
+        output_file.write(image_data)
+
+    print(f"Decrypted image saved at {output_image_path}")
+
+# Usage
 
 
 

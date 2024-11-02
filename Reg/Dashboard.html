@@ -66,10 +66,37 @@
     <div class="option-card">
         <h2>Decrypt Image</h2>
         <p>Upload an encrypted image and provide the decryption key to recover the original image.</p>
-        <a href="/decrypt_image?message=Decrypting Image" class="btn btn-success">Decrypt Image</a>
+        <!-- Use JavaScript to send POST request when button is clicked -->
+        <button class="btn btn-success" onclick="sendOTP()">Decrypt Image</button>
     </div>
 
 </div>
+
+<script>
+    async function sendOTP() {
+        try {
+            // Sending the POST request to the `send_OTP` endpoint
+            const response = await fetch('/send_OTP', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'request_otp' }) // Optional data to send
+            });
+
+            if (response.ok) {
+                alert('OTP sent successfully. Check your email or phone.');
+                // Redirect to the OTP verification page after successful OTP request
+                window.location.href = "/OTP";
+            } else {
+                alert('Failed to send OTP. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+            alert('An error occurred while sending the OTP.');
+        }
+    }
+</script>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
