@@ -260,7 +260,13 @@ async def verify_otp(otp: str = Form(...)):
 decryption_dir = "Decryption"
 os.makedirs(decryption_dir, exist_ok=True)
 
-
+@app.post("/verify_hash")
+async def verify_hash():
+    status = utils.verify_hash()
+    if status:
+        return {"Integrity": "Verified"}
+    else:
+        return {"Integrity": "Failed"}
 @app.post("/decrypt_image")
 async def decrypt_image_file(
         encrypted_image: UploadFile = File(...),

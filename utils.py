@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric import padding as rsa_padding
 import json
 import smtplib
 import random
+import hashlib
 
 
 cred = credentials.Certificate("cred.json")
@@ -94,12 +95,30 @@ def get_hospitals():
 
 
 
+
+
+def calculate_image_hash(image_path):
+    """Calculate the SHA-256 hash of an image."""
+    hash_sha256 = hashlib.sha256()
+
+    # Open image file in binary mode
+    with open(image_path, "rb") as image_file:
+        # Read and update hash in chunks to handle large files
+        for chunk in iter(lambda: image_file.read(4096), b""):
+            hash_sha256.update(chunk)
+
+    # Return the hash in hexadecimal format
+    return hash_sha256.hexdigest()
+
+
 def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
     # Step 1: Read the image from the given path
+    hash_value = calculate_image_hash(image_path)
     with open('current_hospital.json', 'r') as json_file:
         # Load the JSON data into a Python object (typically a dictionary)
         data = json.load(json_file)
     sender = data['hospital_name']
+
 
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file {image_path} does not exist.")
@@ -141,6 +160,7 @@ def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
     )
 
     # Step 9: Save the encrypted image and AES key to files
+    hash_path = f"{hospital}/hash_value_{hospital}.txt"
     encrypted_image_path = f"{hospital}/encrypted_image_{sender}.bin"
     encrypted_key_path = f"{hospital}/encrypted_aes_key_{sender}.bin"
 
@@ -148,10 +168,15 @@ def encrypt_image_with_aes_and_rsa(image_path: str, hospital: str):
         image_file.write(iv + encrypted_image)  # Save IV + encrypted image
 
     with open(encrypted_key_path, "wb") as key_file:
-        key_file.write(encrypted_aes_key)  # Save encrypted AES key
+        key_file.write(encrypted_aes_key)
+
+    with open(hash_path, "w") as hash_file:
+        hash_file.write(hash_value)
+    # Save encrypted AES key
 
     print(f"Encrypted image saved at {encrypted_image_path}")
     print(f"Encrypted AES key saved at {encrypted_key_path}")
+    print(f"Hash value saved at {hash_path}")
 
 
     return encrypted_image_path, encrypted_key_path
@@ -241,7 +266,32 @@ def decrypt_image_file(encrypted_image_path: str, encrypted_key_path: str, priva
 
     print(f"Decrypted image saved at {output_image_path}")
 
-# Usage
+
+def verify_hash():
+    decrypted_image_path = f'Decryption/{get_current_hospital()}_Decrypted_image.jpg'
+    calculated_hash = calculate_image_hash(decrypted_image_path)
+
+    # Path to the received hash value file
+    received_hash_path = f'{get_current_hospital()}/hash_value_{get_current_hospital()}.txt'
+
+    # Read the hash value from the text file
+    try:
+        with open(received_hash_path, 'r') as file:
+            received_hash = file.read().strip()  # Read and strip any extra whitespace/newline
+    except FileNotFoundError:
+        print("Received hash file not found.")
+        return False
+
+    # Verify if the calculated hash matches the received hash
+    if calculated_hash == received_hash:
+        print("Hash verification successful. Image integrity verified.")
+        return True
+    else:
+        print("Hash verification failed. Image integrity compromised.")
+        return False
+
+
+
 
 
 

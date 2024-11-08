@@ -69,52 +69,76 @@
 
 <script>
     async function decryptFiles() {
-    const imageFile = document.getElementById("encryptedImage").files[0];
-    const keyFile = document.getElementById("encryptedKey").files[0];
-    const privateKeyFile = document.getElementById("privateKey").files[0];
+        const imageFile = document.getElementById("encryptedImage").files[0];
+        const keyFile = document.getElementById("encryptedKey").files[0];
+        const privateKeyFile = document.getElementById("privateKey").files[0];
 
-    if (!imageFile || !keyFile || !privateKeyFile) {
-        alert("Please upload all required files.");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("encrypted_image", imageFile);
-    formData.append("encrypted_key", keyFile);
-    formData.append("private_key", privateKeyFile);
-
-    try {
-        const response = await fetch("/decrypt_image", {
-            method: "POST",
-            body: formData
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            const decryptedImageUrl = result.decryptedImageUrl; // Keep this for displaying the image
-            const downloadUrl = "/get_decrypted_image" // Get the filename from the URL for downloading
-
-            // Display the decrypted image
-            document.getElementById("result").innerHTML = `
-                <div class="alert alert-success">Decryption successful!</div>
-                <p><strong>Decrypted Image:</strong></p>
-                <img src="${decryptedImageUrl}" alt="Decrypted Image" class="img-fluid">
-                <a href="${downloadUrl}" class="btn btn-primary mt-2">Download Decrypted Image</a>
-            `;
-        } else {
-            document.getElementById("result").innerHTML = `
-                <div class="alert alert-danger">Decryption failed. Please check your files and try again.</div>
-            `;
-            console.error("Server error:", response.status);
+        if (!imageFile || !keyFile || !privateKeyFile) {
+            alert("Please upload all required files.");
+            return;
         }
-    } catch (error) {
-        console.error("Error:", error);
-        document.getElementById("result").innerHTML = `
-            <div class="alert alert-danger">An error occurred while processing your request.</div>
-        `;
-    }
-}
 
+        const formData = new FormData();
+        formData.append("encrypted_image", imageFile);
+        formData.append("encrypted_key", keyFile);
+        formData.append("private_key", privateKeyFile);
+
+        try {
+            const response = await fetch("/decrypt_image", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                const decryptedImageUrl = result.decryptedImageUrl;
+                const downloadUrl = "/get_decrypted_image";
+
+                // Display the decrypted image and add the new "Check Integrity" button
+                document.getElementById("result").innerHTML = `
+                    <div class="alert alert-success">Decryption successful!</div>
+                    <p><strong>Decrypted Image:</strong></p>
+                    <img src="${decryptedImageUrl}" alt="Decrypted Image" class="img-fluid">
+                    <a href="${downloadUrl}" class="btn btn-primary mt-2">Download Decrypted Image</a>
+                    <button class="btn btn-secondary mt-2" onclick="checkIntegrity()">Check Integrity</button>
+                `;
+            } else {
+                document.getElementById("result").innerHTML = `
+                    <div class="alert alert-danger">Decryption failed. Please check your files and try again.</div>
+                `;
+                console.error("Server error:", response.status);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById("result").innerHTML = `
+                <div class="alert alert-danger">An error occurred while processing your request.</div>
+            `;
+        }
+    }
+
+    // Function to check integrity by calling the verify_hash endpoint
+    async function checkIntegrity() {
+        try {
+            const response = await fetch("/verify_hash", {
+                method: "POST"
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.Integrity === "Verified") {
+                    alert("Integrity verified. The image is authentic and untampered.");
+                } else {
+                    alert("Integrity verification failed. The image may have been tampered with.");
+                }
+            } else {
+                alert("Integrity check failed. Please try again.");
+                console.error("Server error:", response.status);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("An error occurred while verifying integrity.");
+        }
+    }
 </script>
 
 </body>
