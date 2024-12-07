@@ -1,0 +1,1 @@
+{'name': 'UV ballika', 'address': 'Udupi', 'contact_email': 'urmom@gmail.com', 'contact_phone': '99029029302'}
