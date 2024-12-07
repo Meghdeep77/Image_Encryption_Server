@@ -11,7 +11,7 @@ import utils
 app = FastAPI()
 app.mount("/Reg", StaticFiles(directory="./Reg"), name="Reg")
 app.mount("/Decryption", StaticFiles(directory="./Decryption"), name="Decryption")
-app.mount("/uploads", StaticFiles(directory="./uploads"), name="uploads")
+#app.mount("/uploads", StaticFiles(directory="./uploads"), name="uploads")
 # Directory for storing registered hospitals (for demo purposes)
 HOSPITALS_DIR = Path("hospitals")
 HOSPITALS_DIR.mkdir(parents=True, exist_ok=True)
